@@ -1,98 +1,105 @@
-// Checklist rows and the guide detail panel.
-import { escapeHtml } from './util.js';
-import { displayName, displayDescription, kindLabel } from './filters.js';
-import { sourceLink } from './sources.js';
+// The checklist view: trophy rows and the guide detail panel beside them.
+// Rows show the grade badge, the official name and description, the
+// progress counter where one applies, and the missable and unconfirmed
+// tags. The detail panel shows the full guide with its named sources.
+import { GRADE_LABELS, KIND_LABELS, isMasked } from './filters.js';
+import { counterValue } from './store.js';
+import { sourceLinks } from './sources.js';
 
-function gradeBadge(grade) {
-  return `<span class="badge ${grade}">${escapeHtml(grade)}</span>`;
+function gradeBadge(trophy) {
+  return `<span class="badge grade-${trophy.grade}" title="${GRADE_LABELS[trophy.grade]}">${GRADE_LABELS[trophy.grade]}</span>`;
 }
 
-function targetChip(trophy, state) {
-  if (!trophy.target) return '';
-  const have = state.counts[trophy.id] || 0;
-  const unit = trophy.targetUnit ? ` ${escapeHtml(trophy.targetUnit)}` : '';
-  return `<span class="counterchip">${have}/${trophy.target}${unit}</span>`;
+function counterChip(trophy, state) {
+  if (!trophy.counter) return '';
+  const value = counterValue(state, trophy.id);
+  const done = value >= trophy.counter.target;
+  return `<span class="counter ${done ? 'done' : ''}">${value}/${trophy.counter.target} ${trophy.counter.unit}</span>`;
 }
 
-function tagsFor(trophy) {
+function tagRow(trophy) {
   const tags = [];
-  if (trophy.hidden) tags.push('<span class="tag hidden">Hidden</span>');
-  if (trophy.missable) tags.push('<span class="tag missable">Possibly missable</span>');
-  if (trophy.unknown) tags.push('<span class="tag unknown">Method not confirmed</span>');
-  return tags.join('');
+  if (trophy.missable) tags.push('<span class="tag tag-missable">Possibly missable</span>');
+  if (trophy.unconfirmed) tags.push('<span class="tag tag-unconfirmed">Method not confirmed yet</span>');
+  trophy.kinds.forEach((kind) => {
+    tags.push(`<span class="tag">${KIND_LABELS[kind] || kind}</span>`);
+  });
+  return tags.join(' ');
 }
 
-export function renderList(listEl, trophies, state, opts, callbacks) {
-  listEl.innerHTML = '';
-  for (const t of trophies) {
-    const li = document.createElement('li');
-    li.className = 'trophyrow' + (state.earned[t.id] ? ' earned' : '') + (opts.selectedId === t.id ? ' selected' : '');
-    li.dataset.id = String(t.id);
-    const box = document.createElement('input');
-    box.type = 'checkbox';
-    box.checked = Boolean(state.earned[t.id]);
-    box.setAttribute('aria-label', `Earned: ${t.name}`);
-    box.addEventListener('click', (event) => {
-      event.stopPropagation();
-      callbacks.onToggle(t.id, box.checked);
-    });
-    const badge = document.createElement('span');
-    badge.innerHTML = gradeBadge(t.grade);
-    const main = document.createElement('div');
-    main.innerHTML =
-      `<div class="tname">${escapeHtml(displayName(t, state, opts.spoilersOn))}</div>` +
-      `<div class="tdesc">${escapeHtml(displayDescription(t, state, opts.spoilersOn))}</div>` +
-      `<div class="tmeta"><span class="tag">${escapeHtml(kindLabel(t))}</span>${tagsFor(t)}</div>`;
-    const chip = document.createElement('span');
-    chip.innerHTML = targetChip(t, state);
-    li.append(box, badge, main, chip);
-    li.addEventListener('click', () => callbacks.onSelect(t.id));
-    listEl.appendChild(li);
-  }
-}
-
-function stageText(trophy) {
-  if (trophy.stage === 1) return 'Step 1 — play the story.';
-  if (trophy.stage === 2) return 'Step 2 — the 100% checklist, after the credits.';
-  if (trophy.stage === 3) return 'Step 3 — Strangers & Freaks and clean-up.';
-  return 'Any time, in free roam.';
-}
-
-export function renderDetail(panel, trophy, state, callbacks) {
-  if (!trophy) {
-    panel.innerHTML = '<p class="detailhint">Pick a trophy on the left to read its guide, its sources, and when to earn it.</p>';
+export function renderChecklistRows(listEl, trophies, state, onSelect, selectedId) {
+  if (trophies.length === 0) {
+    listEl.innerHTML = '<p class="empty">No trophies match these filters. Clear the search or pick another filter.</p>';
     return;
   }
-  const have = state.counts[trophy.id] || 0;
-  const counter = trophy.target
-    ? `<div class="counterbox" role="group" aria-label="Progress counter">
-        <button type="button" data-step="-1" aria-label="Decrease count">−</button>
-        <span class="count">${have} / ${trophy.target}${trophy.targetUnit ? ' ' + escapeHtml(trophy.targetUnit) : ''}</span>
-        <button type="button" data-step="1" aria-label="Increase count">+</button>
-        <span class="small">Your count — saved in this browser.</span>
-      </div>`
-    : '';
-  const missable = trophy.missable
-    ? `<p><span class="tag missable">Possibly missable</span> ${escapeHtml(trophy.missableNote || '')}</p>`
-    : '<p>No missable moment: this trophy stays available in free roam after the story.</p>';
-  const unknown = trophy.unknown
-    ? '<p><span class="tag unknown">Method not confirmed yet</span> Checked 20 November 2026 — no guide we cite has confirmed the exact steps. This entry says so instead of guessing.</p>'
-    : '';
-  const sources = (trophy.sources || ['powerpyx', 'gtabase'])
-    .map((key) => `<li>${sourceLink(key)}</li>`)
+  listEl.innerHTML = trophies
+    .map((trophy) => {
+      const earned = Boolean(state.earned[trophy.id]);
+      const masked = isMasked(trophy, state);
+      const name = masked ? 'Hidden story trophy' : trophy.name;
+      const description = masked ? 'Earn this trophy to reveal its name and description.' : trophy.description;
+      return `<article class="row ${earned ? 'earned' : ''} ${selectedId === trophy.id ? 'selected' : ''}" data-id="${trophy.id}" tabindex="0" role="button" aria-label="${masked ? 'Hidden story trophy' : trophy.name}">
+        <label class="tick" title="Mark earned">
+          <input type="checkbox" data-earned="${trophy.id}" ${earned ? 'checked' : ''} aria-label="Earned: ${masked ? 'hidden story trophy' : trophy.name}">
+          <span class="box" aria-hidden="true">${earned ? '✓' : ''}</span>
+        </label>
+        <div class="row-main">
+          <div class="row-top">${gradeBadge(trophy)}<h3>${name}</h3>${counterChip(trophy, state)}</div>
+          <p class="desc">${description}</p>
+          <div class="tags">${tagRow(trophy)}</div>
+        </div>
+      </article>`;
+    })
     .join('');
-  panel.innerHTML =
-    `<h2>${escapeHtml(trophy.name)}</h2>` +
-    `<p>${gradeBadge(trophy.grade)} <span class="tag">${escapeHtml(kindLabel(trophy))}</span>${tagsFor(trophy)}</p>` +
-    `<p class="official">Official description: “${escapeHtml(trophy.description)}”</p>` +
-    `<h3>How to unlock it</h3><p>${escapeHtml(trophy.guide)}</p>` +
-    unknown +
-    `<h3>Sources</h3><ul class="sources">${sources}</ul>` +
-    `<h3>When</h3><p>${stageText(trophy)}</p>` +
-    `<h3>Missable?</h3>${missable}` +
-    (trophy.target ? `<h3>Progress target</h3>${counter}` : '') +
-    `<p class="small">Guide text is original to this atlas. The official name and description are shown as PlayStation publishes them.</p>`;
-  for (const btn of panel.querySelectorAll('.counterbox button')) {
-    btn.addEventListener('click', () => callbacks.onCount(trophy.id, Number(btn.dataset.step)));
+  listEl.querySelectorAll('.row').forEach((row) => {
+    row.addEventListener('click', (event) => {
+      if (event.target.closest('input[type="checkbox"]')) return;
+      onSelect(Number(row.dataset.id));
+    });
+    row.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        onSelect(Number(row.dataset.id));
+      }
+    });
+  });
+}
+
+export function renderDetail(panelEl, trophy, state, onCounter) {
+  if (!trophy) {
+    panelEl.innerHTML = '<p class="empty">Pick a trophy on the left to read its guide, sources and progress counter.</p>';
+    return;
   }
+  const earned = Boolean(state.earned[trophy.id]);
+  const masked = isMasked(trophy, state);
+  const name = masked ? 'Hidden story trophy' : trophy.name;
+  const description = masked ? 'Earn this trophy to reveal its name and description.' : trophy.description;
+  const links = sourceLinks(trophy.sources)
+    .map((source) => `<li><a href="${source.url}" target="_blank" rel="noopener">${source.label}</a></li>`)
+    .join('');
+  let counterBlock = '';
+  if (trophy.counter) {
+    const value = counterValue(state, trophy.id);
+    counterBlock = `<section class="counter-box">
+      <h4>Your progress</h4>
+      <div class="stepper">
+        <button type="button" data-step="-1" aria-label="Decrease counter">−</button>
+        <strong>${value} / ${trophy.counter.target} ${trophy.counter.unit}</strong>
+        <button type="button" data-step="1" aria-label="Increase counter">+</button>
+      </div>
+      ${trophy.counter.note ? `<p class="note">${trophy.counter.note}.</p>` : ''}
+    </section>`;
+  }
+  panelEl.innerHTML = `<article class="detail">
+    <div class="detail-head">${gradeBadge(trophy)}<div><h2>${name}</h2><p class="official">Official description: ${description}</p></div></div>
+    <p class="earned-line">${earned ? '✓ Earned — ticked in your tracker.' : 'Not earned yet.'} Roadmap stage ${trophy.stage} of 3.</p>
+    <div class="tags">${tagRow(trophy)}</div>
+    <section><h4>Guide</h4><p class="guide">${trophy.guide}</p></section>
+    ${counterBlock}
+    <section><h4>Sources</h4><ul class="sources">${links}</ul>
+    <p class="note">Every fact above comes from the sources listed here. The guide is written in this atlas's own words; only the official name and description are shown as PlayStation publishes them.</p></section>
+  </article>`;
+  panelEl.querySelectorAll('[data-step]').forEach((button) => {
+    button.addEventListener('click', () => onCounter(trophy, Number(button.dataset.step)));
+  });
 }

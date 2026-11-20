@@ -1,25 +1,23 @@
-// Next-up planner: the first trophy still unearned, in roadmap order — story
-// first, then the 100% grind, then strangers and clean-up, then any-time
-// trophies and the ones with no confirmed method last.
-const STAGE_ORDER = { 1: 0, 2: 1, 3: 2, 0: 3 };
+// The Next-up planner: the first unearned trophy in roadmap order, so the
+// player always knows what to chase next without scrolling the list.
+import { sortForRoadmap } from './filters.js';
 
-export function nextUp(trophies, state) {
-  const remaining = trophies.filter((t) => !state.earned[t.id]);
-  if (remaining.length === 0) return null;
-  remaining.sort((a, b) => {
-    const sa = STAGE_ORDER[a.stage ?? 0] ?? 3;
-    const sb = STAGE_ORDER[b.stage ?? 0] ?? 3;
-    if (sa !== sb) return sa - sb;
-    return a.id - b.id;
-  });
-  const pick = remaining[0];
-  const why =
-    pick.stage === 1
-      ? 'Story — earn it as you play the chapters.'
-      : pick.stage === 2
-        ? 'Part of the 100% checklist grind.'
-        : pick.stage === 3
-          ? 'Strangers & clean-up, after the story.'
-          : 'Earn it any time in free roam.';
-  return { trophy: pick, why };
+export function nextUpTrophy(trophies, state) {
+  const ordered = sortForRoadmap(trophies);
+  return ordered.find((trophy) => !state.earned[trophy.id]) || null;
+}
+
+export function renderNextUp(cardEl, trophies, state, onJump) {
+  const next = nextUpTrophy(trophies, state);
+  if (!next) {
+    cardEl.innerHTML = '<strong>Platinum earned.</strong> Every one of the 55 trophies is ticked. Vice Got a Price! is yours.';
+    return;
+  }
+  const stageNames = { 1: 'Step 1 — story', 2: 'Step 2 — 100%', 3: 'Step 3 — clean-up' };
+  cardEl.innerHTML = `<span class="next-label">Next up</span>
+    <strong>${next.name}</strong>
+    <span class="next-meta">${stageNames[next.stage] || ''} · ${next.grade}</span>
+    <span class="next-desc">${next.description}</span>
+    <button type="button" class="btn-small">Open its guide</button>`;
+  cardEl.querySelector('button').addEventListener('click', () => onJump(next.id));
 }

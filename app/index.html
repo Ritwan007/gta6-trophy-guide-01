@@ -3,133 +3,84 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Leonida Trophy Atlas — GTA VI Platinum Guide &amp; Tracker</title>
-<meta name="description" content="Offline guide and tracker for all 55 GTA VI PlayStation 5 trophies: cited guides, a roadmap to the platinum, missable flags, and saved progress.">
-<link rel="icon" href="data:,">
+<title>Leonida Trophy Atlas — GTA VI platinum guide &amp; tracker</title>
+<meta name="description" content="Offline guide and tracker for all 55 GTA VI PlayStation 5 trophies: cited guides, roadmap, missables and saved progress.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="top">
-  <div class="titleblock">
-    <p class="kicker">Grand Theft Auto VI &middot; PlayStation 5 &middot; offline guide</p>
+<header class="masthead">
+  <div class="title-block">
     <h1>Leonida Trophy Atlas</h1>
-    <p class="sub">Every one of the 55 trophies, with a guide in our own words, its sources, and a checklist that remembers where you are. No account, no network, no Rockstar art — just the road to the platinum.</p>
+    <p class="subtitle">The offline GTA VI platinum guide &amp; tracker — all 55 PlayStation 5 trophies, with cited guides, a roadmap, missables and saved progress. No account, no network.</p>
   </div>
-  <div class="progresscard" id="progresscard" aria-live="polite">
-    <div class="bigcount"><span id="earnedCount">0</span><span class="of"> / 55 earned</span></div>
-    <div class="bar" role="progressbar" aria-label="Trophies earned" aria-valuemin="0" aria-valuemax="55" aria-valuenow="0" id="progressBar"><div class="fill" id="progressFill" style="width:0%"></div></div>
-    <p class="grades" id="gradeCounts">Platinum 0/1 &middot; Gold 0/2 &middot; Silver 0/6 &middot; Bronze 0/46</p>
-    <p class="platinumline" id="platinumLine">54 trophies to the platinum.</p>
-    <div class="actions">
-      <button id="exportBtn" type="button">Export progress</button>
-      <label class="importlabel">Import progress <input id="importFile" type="file" accept="application/json,.json"></label>
-      <button id="resetBtn" type="button" class="quiet">Reset</button>
-    </div>
+  <div class="progress-block" aria-label="Platinum progress">
+    <div class="progress-line"><strong id="earned-count">0 / 55</strong><span id="progress-text">0% to platinum</span></div>
+    <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
+    <p class="progress-note">55 trophies · 1 platinum · 2 gold · 6 silver · 46 bronze · 28 hidden · 0 online</p>
+  </div>
+  <div class="save-block">
+    <button type="button" id="export-btn">Export progress</button>
+    <button type="button" id="import-btn">Import progress</button>
+    <input type="file" id="import-file" accept="application/json,.json" hidden>
+    <button type="button" id="reset-btn" class="quiet">Reset</button>
+    <p id="import-note" class="note" role="status"></p>
   </div>
 </header>
 
-<div class="nextup" id="nextup" hidden>
-  <strong>Next up:</strong> <span id="nextupName"></span>
-  <button id="nextupGo" type="button">Open its guide</button>
-  <span class="nextupwhy" id="nextupWhy"></span>
-</div>
-
-<nav class="tabs" aria-label="Guide sections">
-  <button type="button" data-view="checklist" class="active" aria-current="page">Checklist</button>
-  <button type="button" data-view="roadmap">Roadmap to Platinum</button>
-  <button type="button" data-view="missables">Missables</button>
-  <button type="button" data-view="hundred">100% Checklist</button>
-  <button type="button" data-view="sources">Sources</button>
+<nav class="tabs" role="tablist" aria-label="Guide sections">
+  <button type="button" class="tab active" data-tab="checklist" role="tab" aria-selected="true">Checklist</button>
+  <button type="button" class="tab" data-tab="roadmap" role="tab" aria-selected="false">Roadmap</button>
+  <button type="button" class="tab" data-tab="missables" role="tab" aria-selected="false">Missables</button>
+  <button type="button" class="tab" data-tab="hundred" role="tab" aria-selected="false">100% checklist</button>
 </nav>
 
-<section id="view-checklist" class="view">
-  <div class="filters" role="search">
-    <label>Search <input id="searchBox" type="search" placeholder="Name, mission, or place…" autocomplete="off"></label>
-    <label>Kind
-      <select id="kindFilter">
-        <option value="all">All kinds</option>
-        <option value="story">Story</option>
-        <option value="missable">Missable</option>
-        <option value="collectible">Collectibles</option>
-        <option value="activity">Activities</option>
-        <option value="questline">Character questlines</option>
-        <option value="crime">Crime &amp; heists</option>
-        <option value="money">Money &amp; property</option>
-        <option value="completion">100% Completion</option>
-        <option value="unknown">Method not confirmed yet</option>
-      </select>
-    </label>
-    <label>Grade
-      <select id="gradeFilter">
-        <option value="all">All grades</option>
-        <option value="platinum">Platinum</option>
-        <option value="gold">Gold</option>
-        <option value="silver">Silver</option>
-        <option value="bronze">Bronze</option>
-      </select>
-    </label>
-    <label>Status
-      <select id="statusFilter">
-        <option value="all">Earned + remaining</option>
-        <option value="remaining">Remaining only</option>
-        <option value="earned">Earned only</option>
-      </select>
-    </label>
-    <label class="check"><input id="spoilerToggle" type="checkbox"> Hide story spoilers</label>
-  </div>
-  <p class="resultcount" id="resultCount"></p>
-  <div class="twocol">
-    <div class="listwrap">
-      <ol class="trophylist" id="trophyList"></ol>
+<main>
+  <section id="view-checklist" class="view active" aria-label="Trophy checklist">
+    <div id="next-up" class="next-up" aria-label="Next trophy to chase"></div>
+    <div class="filter-bar">
+      <input type="search" id="search-box" placeholder="Search trophies…" aria-label="Search trophies">
+      <label>Grade
+        <select id="grade-filter">
+          <option value="all">All grades</option>
+          <option value="platinum">Platinum</option>
+          <option value="gold">Gold</option>
+          <option value="silver">Silver</option>
+          <option value="bronze">Bronze</option>
+        </select>
+      </label>
+      <label>Show
+        <select id="earned-filter">
+          <option value="all">All trophies</option>
+          <option value="earned">Earned</option>
+          <option value="remaining">Remaining</option>
+        </select>
+      </label>
+      <label class="spoiler-label"><input type="checkbox" id="spoiler-toggle" checked> Hide story spoilers</label>
     </div>
-    <aside class="detail" id="detailPanel" aria-live="polite">
-      <p class="detailhint">Pick a trophy on the left to read its guide, its sources, and when to earn it.</p>
-    </aside>
-  </div>
-</section>
+    <div id="kind-filters" class="kind-filters" aria-label="Filter by kind"></div>
+    <p id="result-count" class="note" role="status"></p>
+    <div class="layout">
+      <div id="trophy-list" class="trophy-list" aria-label="Trophy list"></div>
+      <aside id="detail-panel" class="detail-panel" aria-label="Trophy guide"></aside>
+    </div>
+  </section>
 
-<section id="view-roadmap" class="view" hidden>
-  <h2>Roadmap to the platinum</h2>
-  <p class="lede">About 200 hours, one playthrough, no online trophies, no difficulty settings, no mission replay, no New Game Plus. The checklist appears only after the credits — but everything you do during the story already counts toward it.</p>
-  <div class="warnbox" id="missableWarning">
-    <strong>Read this first — the one possibly missable trophy.</strong>
-    <p>In Chapter 1, the morning after the mission <em>Down to Earth</em>, follow Lucia from the kitchen to the balcony at Jason&rsquo;s house and accept her meditation. That moment is gone after Chapter 1, and it is not yet confirmed whether the trophy <em>Positive Mental Attitude</em> needs it. Do it, and keep a manual save at the start of every chapter — there are 15 manual save slots plus one autosave, and no mission replay to fall back on.</p>
-  </div>
-  <ol class="steps" id="roadmapSteps"></ol>
-  <div class="warnbox soft">
-    <strong>Two habits that protect the run.</strong>
-    <p>Cheats disable trophies and saving, so keep them off the whole run. And the Irredeemable criminal profile is permanent and makes the police more aggressive — avoid piling up profile actions you do not need.</p>
-  </div>
-</section>
+  <section id="view-roadmap" class="view" aria-label="Roadmap to the platinum">
+    <div id="roadmap-view"></div>
+  </section>
 
-<section id="view-missables" class="view" hidden>
-  <h2>Missables</h2>
-  <p class="lede">Built from the official descriptions and the two full guides that played the game. Only one trophy is flagged as possibly missable — and even that one is unconfirmed.</p>
-  <div id="missableList"></div>
-  <h3>Everything else: safe in free roam</h3>
-  <p>Every other trophy is reported as obtainable after the story in free roam. No trophy needs a difficulty setting, a mission medal, or any online play, because the game has none of those.</p>
-  <h3>Not confirmed yet — do not trust a method with no source</h3>
-  <p>Five trophies have no confirmed unlock method as of 20 November 2026. This guide says so plainly instead of guessing. Check the sources again before you chase them.</p>
-  <div id="unknownList"></div>
-</section>
+  <section id="view-missables" class="view" aria-label="Missable trophies">
+    <div id="missables-view"></div>
+  </section>
 
-<section id="view-hundred" class="view" hidden>
-  <h2>The 100% checklist — A Long Road</h2>
-  <p class="lede">The gold trophy <em>A Long Road</em> is the hardest one and the last big gate. The checklist has 35 requirements and shows up after the credits under Progress &rsaquo; Stats &rsaquo; 100% Completion. Most items need only part of a set — the ones marked <strong>all</strong> need everything.</p>
-  <div id="hundredList"></div>
-  <p class="small">Counts: PowerPyx 100% Completion Checklist and GTABase 100% Completion Guide, linked on the Sources tab.</p>
-</section>
-
-<section id="view-sources" class="view" hidden>
-  <h2>Sources</h2>
-  <p class="lede">Every guide in this atlas names its sources beside it. The two full guides below were written from playing the game and cover all 55 trophies; the rest corroborate the list, the totals, and the 100% checklist. Nothing here copies their words — each guide is written for this atlas.</p>
-  <div id="sourceList"></div>
-  <h3>What we could not verify</h3>
-  <p>Rockstar has published no trophy table of its own. The kit names Exophase and PSNProfiles as the list&rsquo;s origin, but their GTA VI trophy pages could not be opened and verified on 19–20 November 2026, so this atlas does not link them. GamesRadar+, PC Gamer and Press Start printed the same list and checklist on 18 November 2026; their pages are named here without links because their addresses were not verified directly. Where two sources disagree, this atlas follows PowerPyx and GTABase and says so — the known disagreement is the final mission&rsquo;s chapter, which the two guides place differently.</p>
-</section>
+  <section id="view-hundred" class="view" aria-label="100 percent checklist">
+    <div id="hundred-view"></div>
+  </section>
+</main>
 
 <footer>
-  <p>Leonida Trophy Atlas — an independent, offline fan guide. Not affiliated with Rockstar Games. Trophy names and descriptions are shown as PlayStation publishes them; all guide text is original. Progress is stored only in your browser (localStorage) and never leaves your machine.</p>
+  <p>Guides written for this atlas from the official trophy list and the sources named beside each trophy: PowerPyx and GTABase first, plus their 100% guides where a trophy touches the checklist. Only the official names and descriptions are shown as PlayStation publishes them. Checked 20 Nov 2026. No Rockstar logo or artwork is used anywhere in this guide.</p>
 </footer>
 
 <script type="module" src="js/main.js"></script>

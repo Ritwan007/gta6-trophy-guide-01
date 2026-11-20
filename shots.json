@@ -1,0 +1,6 @@
+[
+  { "file": "1-checklist.jpg", "path": "/?demo=1", "viewport": { "width": 1280, "height": 800 }, "note": "Cover: full checklist, mid-run demo state (19/55), progress bar, filter row, grade badges, counters" },
+  { "file": "2-guide.jpg", "path": "/?demo=1&trophy=28", "scroll": 520, "viewport": { "width": 1280, "height": 800 }, "note": "Positive Mental Attitude guide open beside the list: official description, guide, missable flag, counter, named source links" },
+  { "file": "3-roadmap.jpg", "path": "/?demo=1&view=roadmap", "viewport": { "width": 1280, "height": 800 }, "note": "Roadmap view: three steps with hours, Chapter 1 meditation warning, 100% summary" },
+  { "file": "4-spoilers.jpg", "path": "/?demo=1&spoilers=1&kind=story", "viewport": { "width": 1280, "height": 800 }, "note": "Spoiler setting on with the story filter: masked story trophies, result count, export/import visible" }
+]
